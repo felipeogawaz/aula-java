@@ -26,10 +26,10 @@ public class App {
 
 
     public static void main( String[] args ){
-        var app = JavalinUtils.makeApp(8080);
+        var app = JavalinUtils.makeApp(8181);
         
         Restaurante restaurante = new Restaurante();
-        povoarUsuarios(restaurante);
+        //povoarUsuarios(restaurante);
 
         IndexController indexController = new IndexController();
         UsuarioController usuariosController = new UsuarioController(restaurante);

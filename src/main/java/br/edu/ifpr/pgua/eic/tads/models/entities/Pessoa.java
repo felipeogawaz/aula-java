@@ -1,14 +1,26 @@
 package br.edu.ifpr.pgua.eic.tads.models.entities;
 
 public class Pessoa {
+    protected int id;
     protected String nome;
     protected String email;
     protected String cpf;
+
+    public Pessoa(int id, String nome, String email, String cpf) {
+        this.id = id;
+        this.nome = nome;
+        this.email = email;
+        this.cpf = cpf;
+    }
 
     public Pessoa(String nome, String email, String cpf) {
         this.nome = nome;
         this.email = email;
         this.cpf = cpf;
+    }
+
+    public int getId(){
+        return id;
     }
 
     public String getNome() {
