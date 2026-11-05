@@ -1,4 +1,5 @@
 package br.edu.ifpr.pgua.eic.tads.models;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -6,14 +7,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import br.edu.ifpr.pgua.eic.tads.utils.DatabaseUtils;
 import br.edu.ifpr.pgua.eic.tads.models.entities.Funcionario;
 import br.edu.ifpr.pgua.eic.tads.models.entities.Usuario;
 
 public class Restaurante {
-    
-    
-    private ArrayList<Usuario> usuarios;
 
+    private ArrayList<Usuario> usuarios;
     private ArrayList<Funcionario> funcionarios;
 
     public Restaurante(){
@@ -21,12 +21,10 @@ public class Restaurante {
         funcionarios = new ArrayList<>();
     }
 
-
     public Usuario buscarCpf(String cpf){
         for(int i=0;i<usuarios.size();i++){
             if(usuarios.get(i).getCpf().equals(cpf)){
                 return usuarios.get(i);
-                
             }
         }
         return null;
@@ -41,30 +39,23 @@ public class Restaurante {
         return null;
     }
 
-    public boolean cadastrarUsuario(String nome, String email, 
-                                    String telefone, String cpf){
-        
+    public boolean cadastrarUsuario(String nome, String email, String telefone, String cpf){
         String url = "jdbc:sqlite:app.db";
-
         try(Connection con=DriverManager.getConnection(url)){
-
             String sql = "INSERT INTO oo_usuario(nome,cpf,telefone,email) VALUES (?,?,?,?)";
-
             PreparedStatement pstm = con.prepareStatement(sql);
-
+            
             pstm.setString(1, nome);
             pstm.setString(2,cpf);
             pstm.setString(3,telefone);
             pstm.setString(4,email);
-
+            
             pstm.executeUpdate();
             return true;
-
         }catch(SQLException e){
             System.out.println("Erro no cadastro!"+e.getMessage());
             return false;
         }
-        
     }
 
     public Funcionario buscarFuncionarioCpf(String cpf){
@@ -76,28 +67,54 @@ public class Restaurante {
         return null;
     }
 
-
-    public String cadastrarFuncionario(String nome, String email, String cpf,
-                                       double salario, String cargo, String turno
-    ){
-
-        if(buscarFuncionarioCpf(cpf) == null){
-            Funcionario f = new Funcionario(nome, email, cpf,salario, cargo, turno);
-            funcionarios.add(f);
-            return "Funcionário cadastrado!";
+    public String cadastrarFuncionario(String nome, String email, String cpf, double salario, String cargo, String turno) {
+        if(buscarFuncionarioCpf(cpf) == null) {
+            String sql = "INSERT INTO oo_funcionarios(nome, email, cpf, salario, cargo, turno) VALUES (?, ?, ?, ?, ?, ?)";
+            try ( 
+                Connection con = DatabaseUtils.getConnection();
+                PreparedStatement pstm = con.prepareStatement(sql)
+            ) {
+                pstm.setString(1, nome);
+                pstm.setString(2, email);
+                pstm.setString(3, cpf);
+                pstm.setDouble(4, salario);
+                pstm.setString(5, cargo);
+                pstm.setString(6, turno);
+                
+                pstm.executeUpdate();
+                return "Funcionário cadastrado!";
+            } catch (SQLException e) {
+                System.out.println("Erro ao cadastrar funcionário: " + e.getMessage());
+                return "Erro ao cadastrar funcionário!";
+            }
         }
         return "Funcionário não cadastrado!";
     }
 
     public String listarFuncionarios(){
         String texto = "";
-
-        for(Funcionario f:funcionarios){
-            texto += f.toString()+"\n";
+        String sql = "SELECT nome, email, cpf, salario, cargo, turno FROM oo_funcionarios";
+        try ( 
+            Connection con = DatabaseUtils.getConnection();
+            PreparedStatement pstm = con.prepareStatement(sql);
+            ResultSet rs = pstm.executeQuery()
+        ) {
+            while (rs.next()) {
+                Funcionario f = new Funcionario(
+                    rs.getString("nome"),
+                    rs.getString("email"),
+                    rs.getString("cpf"),
+                    rs.getDouble("salario"),
+                    rs.getString("cargo"),
+                    rs.getString("turno")
+                );
+                texto += f.toString() + "\n";
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao listar funcionarios: " + e.getMessage());
         }
         return texto;
     }
-
 
     public String depositar(String cpf, double valor){
         Usuario usuario = buscarCpf(cpf);
@@ -107,7 +124,6 @@ public class Restaurante {
         if(valor <= 0){
             return "Valor inválido!";
         }
-
         if(usuario.inserirCredito(valor)){
             return "Depósito realizado!";
         }else{
@@ -123,7 +139,6 @@ public class Restaurante {
         if(valor <= 0){
             return "Valor inválido!";
         }
-
         if(usuario.consumirRefeicao(valor)){
             return "Depósito realizado!";
         }else{
@@ -139,53 +154,36 @@ public class Restaurante {
         return usuario.gerarExtrato();
     }
 
-
     public ArrayList<Usuario> getUsuarios(){
-        
         ArrayList<Usuario> lista = new ArrayList<>();
-
         String url = "jdbc:sqlite:app.db";
-
         try(Connection con=DriverManager.getConnection(url)){
             String sql = "SELECT * FROM oo_usuario";
-
             PreparedStatement pstm = con.prepareStatement(sql);
-
             ResultSet rs = pstm.executeQuery();
-
+            
             while(rs.next()){
                 int id = rs.getInt("id");
                 String nome = rs.getString("nome");
                 String telefone = rs.getString("telefone");
                 String cpf = rs.getString("cpf");
                 String email = rs.getString("email");
-
+                
                 Usuario u = new Usuario(id, nome, email, cpf, telefone);
-
                 lista.add(u);
             }
-
             return lista;
         }catch(SQLException e){
             System.out.println("Erro ao listar usuarios..."+e.getMessage());
             return null;
         }
-
-
     }
 
     public String listar(){
-
         String texto="Usuários Cadastrados\n";
-
         for(int i=0;i<usuarios.size();i++){
             texto += usuarios.get(i).toString()+"\n";
-            
-            
         }
         return texto;
-
     }
-
-
 }
